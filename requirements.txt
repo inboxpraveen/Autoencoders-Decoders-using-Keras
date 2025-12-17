@@ -1,0 +1,19 @@
+# Core dependencies for Autoencoder Project
+# Compatible with Python 3.8+
+
+# Deep Learning Framework
+tensorflow>=2.13.0,<3.0.0
+
+# Data Processing
+numpy>=1.24.0,<2.0.0
+scikit-learn>=1.3.0,<2.0.0
+
+# Visualization
+matplotlib>=3.7.0,<4.0.0
+
+# Optional: For better progress bars (if needed)
+# tqdm>=4.65.0
+
+# Note: If you have a NVIDIA GPU, you may want to install:
+# tensorflow[and-cuda] for automatic GPU support
+
