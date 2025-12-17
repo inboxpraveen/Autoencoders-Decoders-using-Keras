@@ -6,6 +6,11 @@
 
 A comprehensive, educational implementation of various autoencoder architectures for image processing. This project demonstrates dimensionality reduction, image reconstruction, denoising, similarity search, and image morphing using deep learning.
 
+## 📖 Documentation
+
+- **🚀 [START HERE](START_HERE.md)** - Get started in 5 minutes with quick commands and examples
+- **📊 [PROJECT SUMMARY](PROJECT_SUMMARY.md)** - Comprehensive guide covering concepts, architecture, and upgrade details
+
 ## 🎯 Project Overview
 
 This project implements three types of autoencoders with increasing complexity:
