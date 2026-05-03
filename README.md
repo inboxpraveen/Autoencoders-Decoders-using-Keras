@@ -6,6 +6,8 @@
 
 A comprehensive, educational implementation of various autoencoder architectures for image processing. This project demonstrates dimensionality reduction, image reconstruction, denoising, similarity search, and image morphing using deep learning.
 
+<img src="./assets/Autoencoder-Decoder Concept Image.png" alt="Concept Architecture Diagram">
+
 ## 📖 Documentation
 
 - **🚀 [START HERE](START_HERE.md)** - Get started in 5 minutes with quick commands and examples
@@ -60,7 +62,7 @@ Same architecture as convolutional autoencoder, but trained with corrupted input
    # Windows
    python -m venv venv
    venv\Scripts\activate
-
+   
    # Linux/Mac
    python3 -m venv venv
    source venv/bin/activate
