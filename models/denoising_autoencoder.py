@@ -106,6 +106,7 @@ def train_denoising_autoencoder(
     }
     
     best_val_loss = float('inf')
+    best_weights = None
     patience_counter = 0
     patience = 10
     
@@ -136,6 +137,7 @@ def train_denoising_autoencoder(
         current_val_loss = epoch_history.history['val_loss'][0]
         if current_val_loss < best_val_loss:
             best_val_loss = current_val_loss
+            best_weights = autoencoder.get_weights()
             patience_counter = 0
             # Save best model
             autoencoder.save(
@@ -150,10 +152,10 @@ def train_denoising_autoencoder(
             print(f"\nEarly stopping after {epoch + 1} epochs")
             break
     
-    # Load best model
-    autoencoder = keras.models.load_model(
-        os.path.join(checkpoint_dir, 'denoising_autoencoder_best.keras')
-    )
+    # Restore the best weights in place. The encoder and decoder share layers
+    # with this model, so they pick up the restored weights too.
+    if best_weights is not None:
+        autoencoder.set_weights(best_weights)
     
     # Evaluate on noisy test data
     X_test_noisy = noise_function(X_test, **noise_params)

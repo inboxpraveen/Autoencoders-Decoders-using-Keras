@@ -30,13 +30,13 @@ X, _ = load_lfw_dataset(dimx=32, dimy=32)
 X_train, X_test = prepare_data(X, test_size=0.1)
 img_shape = X_train.shape[1:]
 
-print(f"   ✓ Loaded {len(X_train)} training images")
-print(f"   ✓ Image shape: {img_shape}")
+print(f"   Loaded {len(X_train)} training images")
+print(f"   Image shape: {img_shape}")
 
 # 2. Show sample images
 print("\n2. Displaying sample images...")
 plot_sample_images(X_train[:6], title="Sample Images", save_path="results/quick_example_samples.png")
-print("   ✓ Saved to: results/quick_example_samples.png")
+print("   Saved to: results/quick_example_samples.png")
 
 # 3. Build and train PCA autoencoder (fast)
 print("\n3. Training PCA Autoencoder (this is quick)...")
@@ -52,7 +52,7 @@ history = autoencoder.fit(
 )
 
 test_loss = autoencoder.evaluate(X_test, X_test, verbose=0)
-print(f"   ✓ PCA Autoencoder trained! Test MSE: {test_loss:.6f}")
+print(f"   PCA Autoencoder trained! Test MSE: {test_loss:.6f}")
 
 # 4. Visualize reconstruction
 print("\n4. Visualizing reconstruction...")
@@ -60,22 +60,22 @@ visualize_reconstruction(
     X_test[0], encoder, decoder,
     save_path="results/quick_example_reconstruction.png"
 )
-print("   ✓ Saved to: results/quick_example_reconstruction.png")
+print("   Saved to: results/quick_example_reconstruction.png")
 
 # 5. Summary
 print("\n" + "="*70)
 print("EXAMPLE COMPLETED!")
 print("="*70)
 print("\nWhat was demonstrated:")
-print("  ✓ Data loading and preprocessing")
-print("  ✓ PCA autoencoder architecture")
-print("  ✓ Model training")
-print("  ✓ Image reconstruction")
+print("  Data loading and preprocessing")
+print("  PCA autoencoder architecture")
+print("  Model training")
+print("  Image reconstruction")
 print("\nNext steps:")
-print("  • Try the full CLI: python main.py --mode convolutional --epochs 25")
-print("  • Train denoising autoencoder: python main.py --mode denoising")
-print("  • Explore image retrieval: python main.py --mode retrieval")
-print("  • Create morphing effects: python main.py --mode morphing")
+print("  - Try the full CLI: python main.py --mode convolutional --epochs 25")
+print("  - Train denoising autoencoder: python main.py --mode denoising")
+print("  - Explore image retrieval: python main.py --mode retrieval")
+print("  - Create morphing effects: python main.py --mode morphing")
 print("\nSee README.md for full documentation.")
 print("="*70 + "\n")
 

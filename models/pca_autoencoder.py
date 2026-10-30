@@ -41,7 +41,7 @@ def build_pca_autoencoder(
         >>> autoencoder.fit(X_train, X_train, epochs=10)
     """
     # Calculate total input dimensions
-    input_dims = np.prod(input_shape)
+    input_dims = int(np.prod(input_shape))
     
     # ==================== ENCODER ====================
     encoder_input = layers.Input(shape=input_shape, name='encoder_input')

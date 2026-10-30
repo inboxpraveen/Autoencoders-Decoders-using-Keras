@@ -21,6 +21,7 @@ from typing import Optional
 # Import project modules
 from utils import (
     load_lfw_dataset,
+    load_image_folder,
     prepare_data,
     plot_sample_images,
     plot_training_history,
@@ -37,7 +38,8 @@ from models.pca_autoencoder import train_pca_autoencoder
 from models.convolutional_autoencoder import (
     train_convolutional_autoencoder,
     save_weights,
-    load_weights
+    load_weights,
+    read_model_config
 )
 from models.denoising_autoencoder import train_denoising_autoencoder
 from image_retrieval import demonstrate_retrieval
@@ -55,11 +57,20 @@ def setup_gpu():
         try:
             for gpu in gpus:
                 tf.config.experimental.set_memory_growth(gpu, True)
-            print(f"✓ Found {len(gpus)} GPU(s), memory growth enabled")
+            print(f"Found {len(gpus)} GPU(s), memory growth enabled")
         except RuntimeError as e:
             print(f"GPU configuration error: {e}")
     else:
-        print("✓ No GPU found, using CPU")
+        print("No GPU found, using CPU")
+
+
+def model_config(args):
+    """Settings needed to rebuild a trained model for retrieval or morphing."""
+    return {
+        'mode': args.mode,
+        'code_size': args.code_size,
+        'image_size': args.image_size
+    }
 
 
 def train_pca_mode(args, X_train, X_test, img_shape):
@@ -74,7 +85,7 @@ def train_pca_mode(args, X_train, X_test, img_shape):
         code_size=args.code_size
     )
     
-    print(f"\n📊 Model Configuration:")
+    print(f"\nModel Configuration:")
     print(f"   - Code size: {args.code_size}")
     print(f"   - Input shape: {img_shape}")
     print(f"   - Total parameters: {autoencoder.count_params():,}")
@@ -101,7 +112,7 @@ def train_pca_mode(args, X_train, X_test, img_shape):
             save_path=f"{output_dir}/reconstruction_{i+1}.png"
         )
     
-    print(f"\n✓ Results saved to: {output_dir}")
+    print(f"\nResults saved to: {output_dir}")
     
     return autoencoder, encoder, decoder
 
@@ -118,15 +129,15 @@ def train_convolutional_mode(args, X_train, X_test, img_shape):
         code_size=args.code_size
     )
     
-    print(f"\n📊 Model Configuration:")
+    print(f"\nModel Configuration:")
     print(f"   - Code size: {args.code_size}")
     print(f"   - Input shape: {img_shape}")
     print(f"   - Total parameters: {autoencoder.count_params():,}")
     
-    print("\n🔧 Encoder Architecture:")
+    print("\nEncoder Architecture:")
     encoder.summary()
     
-    print("\n🔧 Decoder Architecture:")
+    print("\nDecoder Architecture:")
     decoder.summary()
     
     # Train
@@ -139,7 +150,7 @@ def train_convolutional_mode(args, X_train, X_test, img_shape):
     )
     
     # Save weights
-    save_weights(encoder, decoder, save_dir=args.save_dir)
+    save_weights(encoder, decoder, save_dir=args.save_dir, config=model_config(args))
     
     # Visualize results
     output_dir = 'results/convolutional'
@@ -153,7 +164,7 @@ def train_convolutional_mode(args, X_train, X_test, img_shape):
             save_path=f"{output_dir}/reconstruction_{i+1}.png"
         )
     
-    print(f"\n✓ Results saved to: {output_dir}")
+    print(f"\nResults saved to: {output_dir}")
     
     return autoencoder, encoder, decoder
 
@@ -170,7 +181,7 @@ def train_denoising_mode(args, X_train, X_test, img_shape):
         code_size=args.code_size
     )
     
-    print(f"\n📊 Model Configuration:")
+    print(f"\nModel Configuration:")
     print(f"   - Code size: {args.code_size}")
     print(f"   - Input shape: {img_shape}")
     print(f"   - Noise sigma: {args.noise_sigma}")
@@ -188,7 +199,7 @@ def train_denoising_mode(args, X_train, X_test, img_shape):
     )
     
     # Save weights
-    save_weights(encoder, decoder, save_dir=args.save_dir)
+    save_weights(encoder, decoder, save_dir=args.save_dir, config=model_config(args))
     
     # Visualize results
     output_dir = 'results/denoising'
@@ -210,7 +221,7 @@ def train_denoising_mode(args, X_train, X_test, img_shape):
             save_path=f"{output_dir}/denoising_{i+1}.png"
         )
     
-    print(f"\n✓ Results saved to: {output_dir}")
+    print(f"\nResults saved to: {output_dir}")
     
     return autoencoder, encoder, decoder
 
@@ -229,11 +240,11 @@ def retrieval_mode(args, X_train, X_test, img_shape):
     
     try:
         encoder.load_weights(os.path.join(args.model_path, 'encoder.weights.h5'))
-        print(f"✓ Loaded encoder from: {args.model_path}")
+        print(f"Loaded encoder from: {args.model_path}")
     except Exception as e:
-        print(f"❌ Error loading model: {e}")
+        print(f"Error loading model: {e}")
         print("Please train a model first using --mode convolutional")
-        return
+        sys.exit(1)
     
     # Run retrieval demonstration
     demonstrate_retrieval(
@@ -259,11 +270,11 @@ def morphing_mode(args, X_train, X_test, img_shape):
     try:
         encoder.load_weights(os.path.join(args.model_path, 'encoder.weights.h5'))
         decoder.load_weights(os.path.join(args.model_path, 'decoder.weights.h5'))
-        print(f"✓ Loaded models from: {args.model_path}")
+        print(f"Loaded models from: {args.model_path}")
     except Exception as e:
-        print(f"❌ Error loading model: {e}")
+        print(f"Error loading model: {e}")
         print("Please train a model first using --mode convolutional")
-        return
+        sys.exit(1)
     
     # Run morphing demonstration
     demonstrate_morphing(
@@ -295,6 +306,9 @@ Examples:
   
   Run image morphing:
     python main.py --mode morphing --model-path saved_models --n-pairs 5
+  
+  Train on your own images instead of LFW:
+    python main.py --mode convolutional --data-dir path/to/images
         """
     )
     
@@ -308,6 +322,12 @@ Examples:
     )
     
     # Data parameters
+    parser.add_argument(
+        '--data-dir',
+        type=str,
+        default=None,
+        help='Folder of your own images to use instead of LFW (default: LFW)'
+    )
     parser.add_argument(
         '--image-size',
         type=int,
@@ -401,6 +421,15 @@ Examples:
     
     args = parser.parse_args()
     
+    # Retrieval and morphing rebuild the trained model, so they must use the
+    # code size and image size it was trained with
+    if args.mode in ('retrieval', 'morphing'):
+        saved = read_model_config(args.model_path)
+        for key in ('code_size', 'image_size'):
+            if key in saved and getattr(args, key) != saved[key]:
+                print(f"Using {key}={saved[key]} from {args.model_path}")
+                setattr(args, key, saved[key])
+    
     # Setup
     print("\n" + "="*70)
     print("AUTOENCODER PROJECT - Image Reconstruction & Generation")
@@ -409,13 +438,17 @@ Examples:
     setup_gpu()
     
     # Load and prepare data
-    print(f"\n📁 Loading dataset...")
-    X, attr = load_lfw_dataset(dimx=args.image_size, dimy=args.image_size)
+    print(f"\nLoading dataset...")
+    if args.data_dir:
+        X = load_image_folder(args.data_dir, dimx=args.image_size, dimy=args.image_size)
+    else:
+        X, _ = load_lfw_dataset(dimx=args.image_size, dimy=args.image_size)
     X_train, X_test = prepare_data(X, test_size=args.test_size)
     img_shape = X_train.shape[1:]
     
     # Show sample images
-    print(f"\n🖼️  Sample images from dataset:")
+    print(f"\nSample images from dataset:")
+    os.makedirs('results', exist_ok=True)
     plot_sample_images(X_train, n_samples=6, save_path='results/sample_images.png')
     
     # Execute selected mode
@@ -430,7 +463,7 @@ Examples:
     mode_functions[args.mode](args, X_train, X_test, img_shape)
     
     print("\n" + "="*70)
-    print("✓ COMPLETED SUCCESSFULLY")
+    print("COMPLETED SUCCESSFULLY")
     print("="*70 + "\n")
 
 
@@ -438,10 +471,10 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n⚠️  Interrupted by user")
+        print("\n\nInterrupted by user")
         sys.exit(0)
     except Exception as e:
-        print(f"\n\n❌ Error: {e}")
+        print(f"\n\nError: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

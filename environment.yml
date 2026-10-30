@@ -1,0 +1,11 @@
+# conda env create -f environment.yml
+# conda activate autoencoders
+name: autoencoders
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - -r requirements.txt
+      - pytest>=8.0

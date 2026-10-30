@@ -10,7 +10,11 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
 from typing import Tuple, Optional
+import importlib.util
+import json
 import os
+
+MODEL_CONFIG_FILE = 'model_config.json'
 
 
 def build_convolutional_autoencoder(
@@ -67,9 +71,11 @@ def build_convolutional_autoencoder(
     
     # Flatten and create bottleneck
     x = layers.Flatten(name='flatten')(x)
+    # Linear code layer: a ReLU here leaves some code units stuck at zero,
+    # which wastes part of an already small bottleneck
     encoder_output = layers.Dense(
         code_size,
-        activation='relu',
+        activation=None,
         name='latent_code'
     )(x)
     
@@ -83,7 +89,7 @@ def build_convolutional_autoencoder(
     decoder_input = layers.Input(shape=(code_size,), name='decoder_input')
     
     # Dense layer to reshape
-    decoder_dense_units = np.prod(shape_before_flatten)
+    decoder_dense_units = int(np.prod(shape_before_flatten))
     x = layers.Dense(
         decoder_dense_units,
         activation='relu',
@@ -169,7 +175,7 @@ def train_convolutional_autoencoder(
     # Define callbacks
     callbacks = [
         keras.callbacks.ModelCheckpoint(
-            filepath=os.path.join(checkpoint_dir, 'conv_autoencoder_epoch_{epoch:03d}.keras'),
+            filepath=os.path.join(checkpoint_dir, 'conv_autoencoder_best.keras'),
             save_best_only=True,
             monitor='val_loss',
             verbose=verbose
@@ -186,13 +192,17 @@ def train_convolutional_autoencoder(
             patience=5,
             min_lr=1e-7,
             verbose=verbose
-        ),
-        keras.callbacks.TensorBoard(
-            log_dir=os.path.join('logs', 'convolutional'),
-            histogram_freq=1
         )
     ]
-    
+
+    # TensorBoard logging is optional; recent TensorFlow releases do not
+    # install it, so only log when the package is available
+    if importlib.util.find_spec('tensorboard') is not None:
+        callbacks.append(keras.callbacks.TensorBoard(
+            log_dir=os.path.join('logs', 'convolutional'),
+            histogram_freq=1
+        ))
+
     # Train model
     print("\nTraining Convolutional Autoencoder...")
     print(f"This may take a while depending on your hardware.")
@@ -216,26 +226,52 @@ def train_convolutional_autoencoder(
 def save_weights(
     encoder: keras.Model,
     decoder: keras.Model,
-    save_dir: str = 'saved_models'
+    save_dir: str = 'saved_models',
+    config: Optional[dict] = None
 ) -> None:
     """
     Save encoder and decoder weights separately.
-    
+
     Args:
         encoder: Encoder model
         decoder: Decoder model
         save_dir: Directory to save weights
+        config: Optional settings needed to rebuild the model (for example
+            code_size and image_size), written to model_config.json
     """
     os.makedirs(save_dir, exist_ok=True)
-    
+
     encoder_path = os.path.join(save_dir, 'encoder.weights.h5')
     decoder_path = os.path.join(save_dir, 'decoder.weights.h5')
-    
+
     encoder.save_weights(encoder_path)
     decoder.save_weights(decoder_path)
-    
+
     print(f"\nSaved encoder weights to: {encoder_path}")
     print(f"Saved decoder weights to: {decoder_path}")
+
+    if config is not None:
+        config_path = os.path.join(save_dir, MODEL_CONFIG_FILE)
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2)
+        print(f"Saved model settings to: {config_path}")
+
+
+def read_model_config(save_dir: str = 'saved_models') -> dict:
+    """
+    Read the settings written by save_weights(), if any.
+
+    Args:
+        save_dir: Directory containing saved weights
+
+    Returns:
+        Dictionary of saved settings, or an empty dict for older model folders
+    """
+    config_path = os.path.join(save_dir, MODEL_CONFIG_FILE)
+    if not os.path.exists(config_path):
+        return {}
+    with open(config_path, encoding='utf-8') as f:
+        return json.load(f)
 
 
 def load_weights(

@@ -1,6 +1,6 @@
 """Utility modules for autoencoder project."""
 
-from .data_loader import load_lfw_dataset, prepare_data
+from .data_loader import load_lfw_dataset, load_image_folder, prepare_data
 from .visualization import (
     show_image,
     visualize_reconstruction,
@@ -12,6 +12,7 @@ from .noise import apply_gaussian_noise
 
 __all__ = [
     'load_lfw_dataset',
+    'load_image_folder',
     'prepare_data',
     'show_image',
     'visualize_reconstruction',
